@@ -21,7 +21,7 @@ public:
 
 CMyBochsApp theApp;
 
-int main(int argc, char* argv)
+int main(int argc, char* argv[])
 {
     printf("  >> the mybochs app starting ... ...\n");
     
