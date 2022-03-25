@@ -5,7 +5,6 @@
 #include <cctype>
 #include <cassert>
 
-//========================================================================
 extern "C"
 {
 #include <sys/stat.h>
@@ -241,12 +240,6 @@ uint8_t* get_elf64_data(const char* filename, uint32_t* len)
     return NULL;
 }
 
-//========================================================================
-class CSimulator;
-extern int bx_begin_simulator(CSimulator* pSim, int argc, char* argv[]);
-extern int bx_main_proc(int argc, char* argv[]);
-//========================================================================
-//////////////////////////////////////////////////////////////////////
 /* 64-bit ELF base types. */
 typedef unsigned long long  int Elf64_Addr  ;
 typedef unsigned      short int Elf64_Half  ;
@@ -339,22 +332,26 @@ uint8_t * getInstrData(const char* pFileName)
 	return pInstr;
 }
 
+
 //========================================================================
-class CMyBochsApp
+extern int bx_main_proc(int argc, char* argv[]);
+//========================================================================
+
+class CMyBochsApp_t
 {
 public:
-    CMyBochsApp()
+    CMyBochsApp_t()
     {
-        printf("  >> CMyBochsApp::CMyBochsApp() called.\n");
+        printf("  >> CMyBochsApp_t::CMyBochsApp_t() called.\n");
     }
-    virtual ~CMyBochsApp()
+    virtual ~CMyBochsApp_t()
     {
-        printf("  >> CMyBochsApp::~CMyBochsApp() called.\n");
+        printf("  >> CMyBochsApp_t::~CMyBochsApp_t() called.\n");
     }
 public:
     virtual int MainProc(int argc, char* argv[])
     {
-        printf("  >> CMyBochsApp::MainProc(argc=%d, argv=%p) called.\n", argc, argv);
+        printf("  >> CMyBochsApp_t::MainProc(argc=%d, argv=%p) called.\n", argc, argv);
         return bx_main_proc(argc, argv);
     }
 };
@@ -377,33 +374,38 @@ public:
     virtual void cpu_loop(void);
 };
 
-class CSimulator
+//========================================================================
+class CSimulator_t;
+extern int bx_begin_simulator(CSimulator_t* pSim, int argc, char* argv[]);
+extern int bx_main_proc(int argc, char* argv[]);
+
+class CSimulator_t
 {
 public:
     class CMyBochsCpu_t* mp_cpu;
 public:
-    CSimulator()
+    CSimulator_t()
         :mp_cpu(NULL)
     {
-        printf("  >> CSimulator::CSimulator() called.\n");
+        printf("  >> CSimulator_t::CSimulator_t() called.\n");
     }
     
-    CSimulator(CMyBochsCpu_t* cpu)
+    CSimulator_t(CMyBochsCpu_t* cpu)
         :mp_cpu(cpu)
     {
-        printf("  >> CSimulator::CSimulator() called.\n");
+        printf("  >> CSimulator_t::CSimulator_t() called.\n");
     }
     
-    virtual ~CSimulator()
+    virtual ~CSimulator_t()
     {
-        printf("  >> CSimulator::~CSimulator() called.\n");
+        printf("  >> CSimulator_t::~CSimulator_t() called.\n");
         delete mp_cpu;
     }
     
 public:
     virtual int begin_simulator(int argc, char* argv[])
     {
-        printf("  >> CSimulator::begin_simulator(argc=%d, argv=%p) called.\n", argc, argv);
+        printf("  >> CSimulator_t::begin_simulator(argc=%d, argv=%p) called.\n", argc, argv);
         int iret = 0;
         try
         {
@@ -430,16 +432,14 @@ typedef   signed int       Bit32s;
 typedef unsigned long long Bit64u;
 typedef   signed long long Bit64s;
 
+
+
 typedef struct s_bxInstruction_c
 {
     int itemp;
 }bxInstruction_c;
 
-
-
-
 typedef void (*BxExecutePtr_tR)(bxInstruction_c *);
-
 
 void exe1(bxInstruction_c *)
 {
@@ -704,7 +704,7 @@ void CMyBochsCpu_t::cpu_loop(void)
     return;
 }
 
-int bx_begin_simulator(CSimulator* pSim, int argc, char* argv[])
+int bx_begin_simulator(CSimulator_t* pSim, int argc, char* argv[])
 {
     printf("  >> bx_begin_simulator(argc=%d, argv=%p) called.\n", argc, argv);
     
@@ -721,25 +721,35 @@ int bx_begin_simulator(CSimulator* pSim, int argc, char* argv[])
 int bx_main_proc(int argc, char* argv[])
 {
     printf("  >> bx_main_proc(argc=%d, argv=%p) called.\n", argc, argv);
-    
-    CSimulator* ptrSim = new CSimulator(new CMyBochsCpu_t);
-    ptrSim->begin_simulator(argc, argv);
-    delete ptrSim;
+    try
+    {
+        CSimulator_t* ptrSim = new CSimulator_t(new CMyBochsCpu_t);
+        ptrSim->begin_simulator(argc, argv);
+        delete ptrSim;
+    }
+    catch(...)
+    {
+        
+    }
     return 0;
 }
-//========================================================================
-CMyBochsApp theApp;
+
+CMyBochsApp_t theApp;
+
 int main(int argc, char* argv[])
 {
     printf("  >> the mybochs app starting ... ...\n");
+    xlog_init();
     int iret = 0;
     do
     {
         printf("   >> the mybochs app do_work().\n");
-        CMyBochsApp* ptrApp = &theApp;
+        CMyBochsApp_t* ptrApp = &theApp;
         iret = ptrApp->MainProc(argc, argv);
         
     }while(0);
+    
+    xlog_uninit();
     
     printf("  >> the mybochs app exit(%d).\n", iret);
     
