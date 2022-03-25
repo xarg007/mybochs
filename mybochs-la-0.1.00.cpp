@@ -1,7 +1,16 @@
-#include <stdio>
+#include <cstdio>
 
-int main()
+int main(int argc, char* argv)
 {
-	return 0;
+    printf("  >> the mybochs app starting ... ...\n");
+    
+    do
+    {
+        printf("   >> the mybochs app do_work().\n");
+    }while(0);
+    
+    printf("  >> the mybochs app starting ... ...\n");
+    
+    return 0;
 }
 
