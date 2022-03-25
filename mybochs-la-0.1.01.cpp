@@ -7,12 +7,12 @@ public:
     {
         printf("  >> CMyBochsApp::CMyBochsApp() called.\n");
     }
-    ~CMyBochsApp()
+    virtual ~CMyBochsApp()
     {
         printf("  >> CMyBochsApp::~CMyBochsApp() called.\n");
     }
-    public:
-    int MainProc(int argc, char* argv[])
+public:
+    virtual int MainProc(int argc, char* argv[])
     {
         printf("  >> CMyBochsApp::~MainProc(argc=%d, argv=%p) called.\n", argc, argv);
         return 0;
@@ -24,16 +24,16 @@ CMyBochsApp theApp;
 int main(int argc, char* argv[])
 {
     printf("  >> the mybochs app starting ... ...\n");
-    
+    int iret = 0;
     do
     {
         printf("   >> the mybochs app do_work().\n");
         CMyBochsApp* ptrApp = &theApp;
-        ptrApp->MainProc(argc, argv);
+        iret = ptrApp->MainProc(argc, argv);
         
     }while(0);
     
-    printf("  >> the mybochs app starting ... ...\n");
+    printf("  >> the mybochs app exit(%d).\n", iret);
     
     return 0;
 }
