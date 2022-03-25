@@ -262,20 +262,20 @@ typedef   signed long long  int Elf64_Sxword;
 
 struct S_ELF64_ELFHeader_t
 {
-	unsigned char e_ident[16]; /* ELF "magic number" */
-	Elf64_Half    e_type     ;
-	Elf64_Half    e_machine  ;
-	Elf64_Word    e_version  ;
-	Elf64_Addr    e_entry    ; /* Entry point virtual address */
-	Elf64_Off     e_phoff    ; /* Program header table file offset */
-	Elf64_Off     e_shoff    ; /* Section header table file offset */
-	Elf64_Word    e_flags    ;
-	Elf64_Half    e_ehsize   ;
-	Elf64_Half    e_phentsize;
-	Elf64_Half    e_phnum    ;
-	Elf64_Half    e_shentsize;
-	Elf64_Half    e_shnum    ;
-	Elf64_Half    e_shstrndx ;
+    unsigned char e_ident[16]; /* ELF "magic number" */
+    Elf64_Half    e_type     ;
+    Elf64_Half    e_machine  ;
+    Elf64_Word    e_version  ;
+    Elf64_Addr    e_entry    ; /* Entry point virtual address */
+    Elf64_Off     e_phoff    ; /* Program header table file offset */
+    Elf64_Off     e_shoff    ; /* Section header table file offset */
+    Elf64_Word    e_flags    ;
+    Elf64_Half    e_ehsize   ;
+    Elf64_Half    e_phentsize;
+    Elf64_Half    e_phnum    ;
+    Elf64_Half    e_shentsize;
+    Elf64_Half    e_shnum    ;
+    Elf64_Half    e_shstrndx ;
 };
 //==========================================
 
@@ -326,22 +326,22 @@ struct S_ELF64_ELFHeader_t* parse_elf64_elf_header(uint8_t* pElfData)
 
 uint8_t * getInstrData(const char* pFileName)
 {
-	unsigned char*  pHexData  = NULL;
-	unsigned int    iLen      = 0;
-	pHexData = get_elf64_data(pFileName, &iLen);
-	if(pHexData == NULL && iLen <= 0)
-	{
-		return NULL;
-	}
-	
-	xlog_info("  >> func{%s:(%05d)} is call, pHexData=\"%p\" .\n", __func__, __LINE__, pHexData);
-	xlog_hexdump(pHexData, 16*10+9);
-	
-	struct S_ELF64_ELFHeader_t* pElfHeader = parse_elf64_elf_header(pHexData);
-	
-	uint8_t * pInstr = pHexData + pElfHeader->e_entry;
-	
-	return pInstr;
+    unsigned char*  pHexData  = NULL;
+    unsigned int    iLen      = 0;
+    pHexData = get_elf64_data(pFileName, &iLen);
+    if(pHexData == NULL && iLen <= 0)
+    {
+        return NULL;
+    }
+    
+    xlog_info("  >> func{%s:(%05d)} is call, pHexData=\"%p\" .\n", __func__, __LINE__, pHexData);
+    xlog_hexdump(pHexData, 16*10+9);
+    
+    struct S_ELF64_ELFHeader_t* pElfHeader = parse_elf64_elf_header(pHexData);
+    
+    uint8_t * pInstr = pHexData + pElfHeader->e_entry;
+    
+    return pInstr;
 }
 
 //========================================================================
