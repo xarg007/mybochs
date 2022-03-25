@@ -38,19 +38,7 @@ public:
         printf("  >> CMyBochsCpu_t::~CMyBochsCpu_t() called.\n");
     }
 public:
-    virtual void cpu_loop(void)
-    {
-        printf("  >> CMyBochsCpu_t::cpu_loop(tbc) called.\n");
-        while(1)
-        {
-            //???
-            printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 1.\n");
-            //???
-            printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 2.\n");
-            //???
-            printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 3.\n");
-        }
-    }
+    virtual void cpu_loop(void);
 };
 
 class CSimulator
@@ -59,6 +47,7 @@ public:
     class CMyBochsCpu_t* mp_cpu;
 public:
     CSimulator()
+        :mp_cpu(NULL)
     {
         printf("  >> CSimulator::CSimulator() called.\n");
     }
@@ -72,6 +61,7 @@ public:
     virtual ~CSimulator()
     {
         printf("  >> CSimulator::~CSimulator() called.\n");
+        delete mp_cpu;
     }
     
 public:
@@ -92,6 +82,24 @@ public:
     }
 };
 
+void CMyBochsCpu_t::cpu_loop(void)
+{
+    printf("  >> CMyBochsCpu_t::cpu_loop(tbc) called.\n");
+    unsigned int iCnt = 0;
+    while(1)
+    {
+        //???
+        printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 1.\n");
+        //???
+        printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 2.\n");
+        //???
+        printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 3.\n");
+        if(iCnt++>3) break;
+    }
+    
+    return;
+}
+
 int bx_begin_simulator(CSimulator* pSim, int argc, char* argv[])
 {
     printf("  >> bx_begin_simulator(argc=%d, argv=%p) called.\n", argc, argv);
@@ -110,6 +118,7 @@ int bx_main_proc(int argc, char* argv[])
     
     CSimulator* ptrSim = new CSimulator(new CMyBochsCpu_t);
     ptrSim->begin_simulator(argc, argv);
+    delete ptrSim;
     return 0;
 }
 //========================================================================
@@ -131,3 +140,8 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+#if 0
+g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.00.cpp -o myapp_exe_0
+g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.01.cpp -o myapp_exe_1
+g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.02.cpp -o myapp_exe_2
+#endif
