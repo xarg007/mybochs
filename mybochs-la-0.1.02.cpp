@@ -107,6 +107,7 @@ void CMyBochsCpu_t::cpu_loop(void)
         printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 2.\n");
         //???
         printf("  >> CMyBochsCpu_t::cpu_loop(tbc) step 3.\n");
+        
         iCnt++;
         if(iCnt>=3)
         {
@@ -157,6 +158,7 @@ int bx_main_proc(int argc, char* argv[])
 
 CMyBochsApp_t theApp;
 
+//g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.0?.cpp -o myapp_exe_?
 int main(int argc, char* argv[])
 {
     printf("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);

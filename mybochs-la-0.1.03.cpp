@@ -11,6 +11,25 @@ extern "C"
 #include <sys/types.h>
 };
 
+//==========================================
+//typedef                   char    int8_t;
+//typedef             short int     int16_t;
+//typedef                   int     int32_t;
+//typedef        long long  int     int64_t;
+typedef unsigned            char    uint8_t;
+typedef unsigned      short int     uint16_t;
+typedef unsigned            int     uint32_t;
+typedef unsigned long long  int     uint64_t;
+
+extern void xlog_init();
+extern void xlog_uninit();
+extern void xlog_mutex_lock();
+extern void xlog_mutex_lock();
+int xlog_info(const char* fmt, ...);
+int xlog_hexdump(const uint8_t* const p_data, uint32_t i_len);
+
+//==========================================
+
 #ifdef XLOG_PTHREAD_T
 #include <pthread.h>
 pthread_mutex_t     xlog_mutex_v = {0};
@@ -48,17 +67,6 @@ void xlog_mutex_unlock()
 #endif
     return ;
 }
-
-//=========================================================
-//typedef                   char    int8_t;
-//typedef             short int     int16_t;
-//typedef                   int     int32_t;
-//typedef        long long  int     int64_t;
-typedef unsigned            char    uint8_t;
-typedef unsigned      short int     uint16_t;
-typedef unsigned            int     uint32_t;
-typedef unsigned long long  int     uint64_t;
-//=========================================================
 
 int xlog_core(unsigned int ui_level, const char* fmt, va_list args)
 {
@@ -239,7 +247,9 @@ uint8_t* get_elf64_data(const char* filename, uint32_t* len)
     xlog_info("  >> get_elf64_data() exit;\n");
     return NULL;
 }
+//==========================================
 
+//==========================================
 /* 64-bit ELF base types. */
 typedef unsigned long long  int Elf64_Addr  ;
 typedef unsigned      short int Elf64_Half  ;
@@ -267,7 +277,9 @@ struct S_ELF64_ELFHeader_t
 	Elf64_Half    e_shnum    ;
 	Elf64_Half    e_shstrndx ;
 };
+//==========================================
 
+//==========================================
 struct S_ELF64_ELFHeader_t* parse_elf64_elf_header(uint8_t* pElfData)
 {
     xlog_info("  >> func{%s:(%05d)} is call.{pElfData=%p}.\n", __func__, __LINE__, pElfData);
@@ -332,46 +344,37 @@ uint8_t * getInstrData(const char* pFileName)
 	return pInstr;
 }
 
-
-//========================================================================
-extern int bx_main_proc(int argc, char* argv[]);
 //========================================================================
 
 class CMyBochsApp_t
 {
 public:
-    CMyBochsApp_t()
-    {
-        printf("  >> CMyBochsApp_t::CMyBochsApp_t() called.\n");
-    }
-    virtual ~CMyBochsApp_t()
-    {
-        printf("  >> CMyBochsApp_t::~CMyBochsApp_t() called.\n");
-    }
+    CMyBochsApp_t();
+    virtual ~CMyBochsApp_t();
 public:
-    virtual int MainProc(int argc, char* argv[])
-    {
-        printf("  >> CMyBochsApp_t::MainProc(argc=%d, argv=%p) called.\n", argc, argv);
-        return bx_main_proc(argc, argv);
-    }
+    virtual int MainProc(int argc, char* argv[]);
 };
-//========================================================================
 
-
-//========================================================================
 class CMyBochsCpu_t
 {
 public:
-    CMyBochsCpu_t()
-    {
-        printf("  >> CMyBochsCpu_t::CMyBochsCpu_t() called.\n");
-    }
-    virtual ~CMyBochsCpu_t()
-    {
-        printf("  >> CMyBochsCpu_t::~CMyBochsCpu_t() called.\n");
-    }
+    CMyBochsCpu_t();
+    virtual ~CMyBochsCpu_t();
 public:
     virtual void cpu_loop(void);
+};
+
+class CSimulator_t
+{
+public:
+    class CMyBochsCpu_t* mp_cpu;
+public:
+    CSimulator_t();
+    CSimulator_t(CMyBochsCpu_t* cpu);
+    virtual ~CSimulator_t();
+    
+public:
+    virtual int begin_simulator(int argc, char* argv[]);
 };
 
 //========================================================================
@@ -379,47 +382,65 @@ class CSimulator_t;
 extern int bx_begin_simulator(CSimulator_t* pSim, int argc, char* argv[]);
 extern int bx_main_proc(int argc, char* argv[]);
 
-class CSimulator_t
+CMyBochsApp_t::CMyBochsApp_t()
 {
-public:
-    class CMyBochsCpu_t* mp_cpu;
-public:
-    CSimulator_t()
-        :mp_cpu(NULL)
-    {
-        printf("  >> CSimulator_t::CSimulator_t() called.\n");
-    }
-    
-    CSimulator_t(CMyBochsCpu_t* cpu)
-        :mp_cpu(cpu)
-    {
-        printf("  >> CSimulator_t::CSimulator_t() called.\n");
-    }
-    
-    virtual ~CSimulator_t()
-    {
-        printf("  >> CSimulator_t::~CSimulator_t() called.\n");
-        delete mp_cpu;
-    }
-    
-public:
-    virtual int begin_simulator(int argc, char* argv[])
-    {
-        printf("  >> CSimulator_t::begin_simulator(argc=%d, argv=%p) called.\n", argc, argv);
-        int iret = 0;
-        try
-        {
-            iret = bx_begin_simulator(this, argc, argv);
-        }
-        catch(...)
-        {
-            //
-        }
+    printf("  >> CMyBochsApp_t::CMyBochsApp_t() called.\n");
+}
 
-        return iret;
-    }
-};
+CMyBochsApp_t::~CMyBochsApp_t()
+{
+    printf("  >> CMyBochsApp_t::~CMyBochsApp_t() called.\n");
+}
 
+int CMyBochsApp_t::MainProc(int argc, char* argv[])
+{
+    printf("  >> CMyBochsApp_t::MainProc(argc=%d, argv=%p) called.\n", argc, argv);
+    return bx_main_proc(argc, argv);
+}
+
+CMyBochsCpu_t::CMyBochsCpu_t()
+{
+    printf("  >> CMyBochsCpu_t::CMyBochsCpu_t() called.\n");
+}
+
+CMyBochsCpu_t::~CMyBochsCpu_t()
+{
+    printf("  >> CMyBochsCpu_t::~CMyBochsCpu_t() called.\n");
+}
+
+CSimulator_t::CSimulator_t()
+    :mp_cpu(NULL)
+{
+    printf("  >> CSimulator_t::CSimulator_t() called.\n");
+}
+
+CSimulator_t::CSimulator_t(CMyBochsCpu_t* cpu)
+    :mp_cpu(cpu)
+{
+    printf("  >> CSimulator_t::CSimulator_t() called.\n");
+}
+
+CSimulator_t::~CSimulator_t()
+{
+    printf("  >> CSimulator_t::~CSimulator_t() called.\n");
+    delete mp_cpu;
+}
+
+int CSimulator_t::begin_simulator(int argc, char* argv[])
+{
+    printf("  >> CSimulator_t::begin_simulator(argc=%d, argv=%p) called.\n", argc, argv);
+    int iret = 0;
+    try
+    {
+        iret = bx_begin_simulator(this, argc, argv);
+    }
+    catch(...)
+    {
+        //
+    }
+
+    return iret;
+}
 
 //制用解码用表
 ////////////////////////////////////////////////////////////////////////////
@@ -432,8 +453,6 @@ typedef   signed int       Bit32s;
 typedef unsigned long long Bit64u;
 typedef   signed long long Bit64s;
 
-
-
 typedef struct s_bxInstruction_c
 {
     int itemp;
@@ -443,27 +462,29 @@ typedef void (*BxExecutePtr_tR)(bxInstruction_c *);
 
 void exe1(bxInstruction_c *)
 {
-    
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
 }
 
 void exe2(bxInstruction_c *)
 {
-    
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
 }
 void exe3(bxInstruction_c *)
 {
-    
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
 }
 void exe4(bxInstruction_c *)
 {
-    
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
 }
+
 //bx_define_opcode(BX_IA_AAA, "aaa", "aaa", NULL, &BX_CPU_C::AAA, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
 //bx_define_opcode(BX_IA_AAD, "aad", "aad", NULL, &BX_CPU_C::AAD, 0, OP_Ib, OP_NONE, OP_NONE, OP_NONE, 0)
 //bx_define_opcode(BX_IA_AAM, "aam", "aam", NULL, &BX_CPU_C::AAM, 0, OP_Ib, OP_NONE, OP_NONE, OP_NONE, 0)
 //bx_define_opcode(BX_IA_AAS, "aas", "aas", NULL, &BX_CPU_C::AAS, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
 //bx_define_opcode(BX_IA_DAA, "daa", "daa", NULL, &BX_CPU_C::DAA, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
 //bx_define_opcode(BX_IA_DAS, "das", "das", NULL, &BX_CPU_C::DAS, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
+
 struct bxIAOpcodeTable
 {
     BxExecutePtr_tR execute1;
@@ -487,13 +508,13 @@ enum OpCodeIdx
 // table of all Bochs opcodes
 bxIAOpcodeTable BxOpcodesTable[] = 
 {
-/*BX_IA_ADC_EwGw,*/    {exe1, exe2, {0,0,0,0}, 0},
-/*BX_IA_ADD_EwGw,*/    {exe1, exe2, {0,0,0,0}, 0},
-/*BX_IA_AND_EwGw,*/    {exe1, exe2, {0,0,0,0}, 0},
-/*BX_IA_CMP_EwGw,*/    {exe1, exe2, {0,0,0,0}, 0},
-/*BX_IA_OR_EwGw, */    {exe1, exe2, {0,0,0,0}, 0},
-/*BX_IA_SBB_EwGw,*/    {exe1, exe2, {0,0,0,0}, 0},
-/*BX_IA_SUB_EwGw,*/    {NULL, NULL, {0,0,0,0}, 0},
+/*BX_IA_ADC_EwGw,*/ {exe1, exe2, {0,0,0,0}, 0},
+/*BX_IA_ADD_EwGw,*/ {exe1, exe2, {0,0,0,0}, 0},
+/*BX_IA_AND_EwGw,*/ {exe1, exe2, {0,0,0,0}, 0},
+/*BX_IA_CMP_EwGw,*/ {exe1, exe2, {0,0,0,0}, 0},
+/*BX_IA_OR_EwGw, */ {exe1, exe2, {0,0,0,0}, 0},
+/*BX_IA_SBB_EwGw,*/ {exe1, exe2, {0,0,0,0}, 0},
+/*BX_IA_SUB_EwGw,*/ {NULL, NULL, {0,0,0,0}, 0},
 };
 
 //bxIAOpcodeTable BxOpcodesTable[] = 
@@ -504,94 +525,68 @@ bxIAOpcodeTable BxOpcodesTable[] =
 //#undef  bx_define_opcode
 //};
 
-
-
-int decoder64_modrm(
-        const Bit8u *iptr,
-        unsigned &remain,
-        bxInstruction_c *i,
-        unsigned b1,
-        unsigned sse_prefix,
-        unsigned rex_prefix,
-        const void *opcode_table
-        )
+int decoder64_modrm(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
 {
-    printf("  >> func:%s called.\n", __func__);
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     return 0;
 }
 
-
-int decoder64(
-        const Bit8u *iptr,
-        unsigned &remain,
-        bxInstruction_c *i,
-        unsigned b1,
-        unsigned sse_prefix,
-        unsigned rex_prefix,
-        const void *opcode_table
-        )
+int decoder64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
 {
-    printf("  >> func:%s called.\n", __func__);
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     return 0;
 }
 
-int decoder_ud64(
-        const Bit8u *iptr,               //??
-        unsigned &remain,                //??
-        bxInstruction_c *i,              //??
-        unsigned b1,                     //??
-        unsigned sse_prefix,             //??
-        unsigned rex_prefix,             //??
-        const void *opcode_table         //??
-        )
+int decoder_ud64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
 {
-    printf("  >> func:%s called.\n", __func__);
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     return 0;
 }
-
-
 
 // opcode 00
-static const Bit64u BxOpcodeTable00[] = { 
+static const Bit64u BxOpcodeTable00[] = 
+{ 
     //last_opcode_lockable(0, BX_IA_ADD_EbGb)
     0xFFFFEEEEAAAABBBB,
 };
 
 // opcode 01
-static const Bit64u BxOpcodeTable01[] = { 
+static const Bit64u BxOpcodeTable01[] = 
+{ 
     0xFFFFEEEEAAAABaBB,
     0xFFFFEEEEAAAABeBB,
 };
 
 
 // opcode 02
-static const Bit64u BxOpcodeTable02[] = { 
+static const Bit64u BxOpcodeTable02[] = 
+{ 
     0xFFFFEEEEAAAABaBB,
     0xFFFFEEEEAAAABeBB,
 };
 
 // opcode 03
-static const Bit64u BxOpcodeTable03[] = { 
+static const Bit64u BxOpcodeTable03[] = 
+{
     0xFFFFEEEEAAAABaBB,
     0xFFFFEEEEAAAABeBB,
 };
 
-//typedef int (*BxFetchDecode64Ptr)(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table);
-typedef int (*BxFetchDecode64Ptr)(
-        const Bit8u *iptr,
-        unsigned &remain,
-        bxInstruction_c *i,
-        unsigned b1,
-        unsigned sse_prefix,
-        unsigned rex_prefix,
-        const void *opcode_table
-        );
-
+typedef int (*BxFetchDecode64Ptr)(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table);
+//typedef int (*BxFetchDecode64Ptr)(
+//        const Bit8u *iptr,
+//        unsigned &remain,
+//        bxInstruction_c *i,
+//        unsigned b1,
+//        unsigned sse_prefix,
+//        unsigned rex_prefix,
+//        const void *opcode_table
+//        );
 
 struct BxOpcodeDecodeDescriptor64
 {
-  BxFetchDecode64Ptr decode_method;
-  const void *       opcode_table;
+    BxFetchDecode64Ptr decode_method;
+    const void *       opcode_table;
 };
 
 static BxOpcodeDecodeDescriptor64 decode64_descriptor[] =
@@ -608,15 +603,13 @@ static BxOpcodeDecodeDescriptor64 decode64_descriptor[] =
 
 ////////////////////////////////////////////////////////////////////////////
 //#define BX_CONST64(x)  (x)
-
 //const Bit64u ATTR_LAST_OPCODE = BX_CONST64(0x8000000000000000);
-
 //#define last_opcode_lockable(attr, ia_opcode)       ((attr) | (Bit64u(ia_opcode) << 48) | ATTR_LAST_OPCODE)
-
 //==========================================================================
+
 int fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned remainingInPage)
 {
-    printf("  >> fetchDecode64 called.\n");
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     
     xlog_hexdump(const_cast<const uint8_t*>(iptr), 16*5+11);
     
@@ -639,6 +632,7 @@ int fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned remainingInPag
     ia_opcode = decode_descriptor->decode_method(iptr, remain, i, b1, sse_prefix, rex_prefix, decode_descriptor->opcode_table);
     
     //得到真正的处理逻辑；
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     
     return ia_opcode;
 }
@@ -646,7 +640,7 @@ int fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned remainingInPag
 //==========================================================================
 
 uint8_t * pInsData = NULL;
-uint32_t  insCnt = 0;
+uint32_t  insCnt   = 0;
 
 void CMyBochsCpu_t::cpu_loop(void)
 {
@@ -666,20 +660,6 @@ void CMyBochsCpu_t::cpu_loop(void)
         
         insCnt = insCnt + 4;
         //译码 [] //查表
-        #if 0
-        struct XXX
-        {
-            int i;
-            //二级
-        } tab1[] = 
-            {
-                {},
-                {},
-            };
-        //decode_func();
-        
-        #endif
-        
         // e9 70 ef ff ff =>  jmpq   10b0 <__xstat@plt>
         
         //构建指令OBJ
@@ -706,53 +686,72 @@ void CMyBochsCpu_t::cpu_loop(void)
 
 int bx_begin_simulator(CSimulator_t* pSim, int argc, char* argv[])
 {
-    printf("  >> bx_begin_simulator(argc=%d, argv=%p) called.\n", argc, argv);
+    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
+    int iret = 0;
     
     //temp tbc
     pInsData = getInstrData(argv[0]);
-    CMyBochsCpu_t* ptrCpu = pSim->mp_cpu;
+    try
+    {
+        CMyBochsCpu_t* ptrCpu = pSim->mp_cpu;
+        
+        ptrCpu->cpu_loop();
+    }
+    catch(...)
+    {
+        xlog_info("  >> func:%s() exceptions;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+    }
+    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
     
-    ptrCpu->cpu_loop();
-    
-    //exit??
-    return 0;
+    return iret;
 }
 
 int bx_main_proc(int argc, char* argv[])
 {
-    printf("  >> bx_main_proc(argc=%d, argv=%p) called.\n", argc, argv);
+    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
+    int iret = 0;
     try
     {
         CSimulator_t* ptrSim = new CSimulator_t(new CMyBochsCpu_t);
-        ptrSim->begin_simulator(argc, argv);
+        iret = ptrSim->begin_simulator(argc, argv);
+        
         delete ptrSim;
+        throw 0; //test throw;
     }
     catch(...)
     {
-        
+        xlog_info("  >> func:%s() exceptions;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     }
+    
+    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
+    
     return 0;
 }
 
 CMyBochsApp_t theApp;
 
+//g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.0?.cpp -o myapp_exe_?
+
 int main(int argc, char* argv[])
 {
-    printf("  >> the mybochs app starting ... ...\n");
+    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
+    xlog_info("  >> the mybochs app starting ... ...\n");
     xlog_init();
     int iret = 0;
     do
     {
-        printf("   >> the mybochs app do_work().\n");
-        CMyBochsApp_t* ptrApp = &theApp;
-        iret = ptrApp->MainProc(argc, argv);
+        xlog_info("   >> the mybochs app do_work().\n");
         
+        CMyBochsApp_t* ptrApp = &theApp;
+        //xlog_info("\e[1m");
+        iret = ptrApp->MainProc(argc, argv);
+        //xlog_info("\e[0m");
+        xlog_info("  >> func:%s() do_work() end;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     }while(0);
     
     xlog_uninit();
-    
-    printf("  >> the mybochs app exit(%d).\n", iret);
-    
+    xlog_info("  >> the mybochs app exit(%d).\n", iret);
+    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
     return 0;
 }
 
