@@ -17,6 +17,15 @@ typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long int uint64_t;
 
+typedef unsigned char Bit8u;
+typedef signed char Bit8s;
+typedef unsigned short Bit16u;
+typedef signed short Bit16s;
+typedef unsigned int Bit32u;
+typedef signed int Bit32s;
+typedef unsigned long long Bit64u;
+typedef signed long long Bit64s;
+
 extern void xlog_init();
 extern void xlog_uninit();
 extern void xlog_mutex_lock();
@@ -326,7 +335,7 @@ struct S_ELF64_ELFHeader_t *parse_elf64_elf_header(uint8_t *pElfData)
 
     return NULL;
 }
-
+unsigned char *g_pHexData = NULL;
 uint8_t *getInstrData(const char *pFileName)
 {
     unsigned char *pHexData = NULL;
@@ -343,8 +352,14 @@ uint8_t *getInstrData(const char *pFileName)
     struct S_ELF64_ELFHeader_t *pElfHeader = parse_elf64_elf_header(pHexData);
 
     uint8_t *pInstr = pHexData + pElfHeader->e_entry;
-
+    g_pHexData = pHexData;
     return pInstr;
+}
+
+//temp tbc;
+void relInstrData(void)
+{
+    free(g_pHexData);
 }
 
 //========================================================================
@@ -367,7 +382,7 @@ public:
 private:
     struct S_Instr_t
     {
-        uint8_t legacy_prefix[4]; //兼容前缀
+        uint8_t legacy_prefix[4]; //兼容前缀 四组 [legacy_prefix_g1][legacy_prefix_g2][legacy_prefix_g3][legacy_prefix_g4]
         uint8_t rex_prefix[4];    //64位新增前缀
         uint8_t opcode[4];        //操作码
         uint8_t modRM[4];         //？[rex.?][mod][reg/opcode_ex][r/m]
@@ -393,6 +408,9 @@ public:
     static void exe2(bxInstruction_c *i, CMyBochsCpu_t *pThisCpu);
     static void exe3(bxInstruction_c *i, CMyBochsCpu_t *pThisCpu);
     static void exe4(bxInstruction_c *i, CMyBochsCpu_t *pThisCpu);
+    
+    //=============================================================
+    int fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned remainingInPage);
 };
 
 class CSimulator_t
@@ -484,14 +502,7 @@ int CSimulator_t::begin_simulator(int argc, char *argv[])
 
 //制用解码用表
 ////////////////////////////////////////////////////////////////////////////
-typedef unsigned char Bit8u;
-typedef signed char Bit8s;
-typedef unsigned short Bit16u;
-typedef signed short Bit16s;
-typedef unsigned int Bit32u;
-typedef signed int Bit32s;
-typedef unsigned long long Bit64u;
-typedef signed long long Bit64s;
+
 
 typedef void (*BxExecutePtr_tR)(bxInstruction_c *, CMyBochsCpu_t *);
 
@@ -570,31 +581,31 @@ extern int decoder64_modrm(const Bit8u *iptr, unsigned &remain, bxInstruction_c 
 // opcode 00
 static const Bit64u BxOpcodeTable00[] = {
     // last_opcode_lockable(0, BX_IA_ADD_EbGb)
-    0xFFFFEEEEAAAABBBB,
+    0xFFFFEEEEAAAABBBBLL,
 };
 
 // opcode 01
 static const Bit64u BxOpcodeTable01[] = {
-    0xFFFFEEEEAAAABaBB,
-    0xFFFFEEEEAAAABeBB,
+    0xFFFFEEEEAAAABaBBLL,
+    0xFFFFEEEEAAAABeBBLL,
 };
 
 // opcode 02
 static const Bit64u BxOpcodeTable02[] = {
-    0xFFFFEEEEAAAABaBB,
-    0xFFFFEEEEAAAABeBB,
+    0xFFFFEEEEAAAABaBBLL,
+    0xFFFFEEEEAAAABeBBLL,
 };
 
 // opcode 03
 static const Bit64u BxOpcodeTable03[] = {
-    0xFFFFEEEEAAAABaBB,
-    0xFFFFEEEEAAAABeBB,
+    0xFFFFEEEEAAAABaBBLL,
+    0xFFFFEEEEAAAABeBBLL,
 };
 
 // opcode 31
 static const Bit64u BxOpcodeTable31[] = {
-    0xFFFFEEEEAAAABaBB,
-    0xFFFFEEEEAAAABeBB,
+    0xFFFFEEEEAAAABaBBLL,
+    0xFFFFEEEEAAAABeBBLL,
 };
 
 typedef int (*BxFetchDecode64Ptr)(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table);
@@ -605,7 +616,291 @@ struct BxOpcodeDecodeDescriptor64
     const void *opcode_table;
 };
 
-static BxOpcodeDecodeDescriptor64 decode64_descriptor[] = {
+extern BxOpcodeDecodeDescriptor64 decode64_descriptor[];
+
+////////////////////////////////////////////////////////////////////////////
+//#define BX_CONST64(x)  (x)
+// const Bit64u ATTR_LAST_OPCODE = BX_CONST64(0x8000000000000000);
+//#define last_opcode_lockable(attr, ia_opcode)       ((attr) | (Bit64u(ia_opcode) << 48) | ATTR_LAST_OPCODE)
+//==========================================================================
+
+int decoder64_modrm(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
+{
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+    return 0;
+}
+
+int decoder64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
+{
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+
+    //得到真正的处理逻辑；
+    // Bit16u ia_opcode = findOpcode((const Bit64u*) opcode_table, decmask);
+    // if (fetchImmediate(iptr, remain, i, ia_opcode, true) < 0)
+    // assign_srcs(i, ia_opcode, nnn, rm);
+
+    return 0;
+}
+
+int decoder_ud64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
+{
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+    return 0;
+}
+
+int CMyBochsCpu_t::fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned remainingInPage)
+{
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+    xlog_hexdump(const_cast<const uint8_t *>(iptr), 16 * 5 + 11);
+    if (remainingInPage > 15)
+        remainingInPage = 15;
+    
+    // i->setILen(remainingInPage);
+
+    unsigned remain = remainingInPage;
+    unsigned b1 = 0; //*iptr;
+
+    //b1 = 0;
+    int ia_opcode = 0;
+    //unsigned seg_override = 0;
+
+    //bool lock = 0;
+    unsigned sse_prefix = 0;
+    unsigned rex_prefix = 0;
+
+    //===================================
+fetch_b1:
+    b1 = *iptr++;
+    remain--;
+    //先处理前缀字节码
+    switch (b1)
+    {
+        case 0x40 ... 0x4F:
+        {
+            //4? rex.???? wrxb?
+            //rex.w = ?
+            //rex.r = ?
+            //rex.x = ?
+            //rex.b = ?
+            goto fetch_b1;
+            // break;
+        }
+        case 0xF2: // REPNE/REPNZ
+        case 0xF3: // REP/REPE/REPZ
+        {
+            // TBC
+        }
+        case 0x2e: // CS:
+        case 0x26: // ES:
+        case 0x36: // SS:
+        case 0x3e: // DS:
+        {
+            // TBC
+        }
+        case 0x64: // FS:
+        case 0x65: // GS:
+        {
+        }
+        case 0x66: // OpSize
+        {
+        }
+        case 0x67: // AddrSize
+        {
+        }
+        case 0xf0: // LOCK:
+        {
+        }
+        //case 0x0f: // 2 byte escape
+        //{
+        //    if (remain != 0)
+        //    {
+        //        remain--;
+        //        b1 = 0x100 | *iptr++; // 0x0F?? -> 01??
+        //        break;
+        //    }
+        //}
+        default:
+        {
+            break;
+        }
+    }
+    
+    // handle 2-byte opcode
+    if(b1 == 0x0f && remain != 0)
+    {
+        remain--;
+        b1 = 0x100 | *iptr++; // 0x0Fxx -> 0x01xx
+    }
+
+    // handle 3-byte opcode
+    if (b1 == 0x138 || b1 == 0x13a)
+    {
+        if (remain == 0)
+            return (-1);
+        if (b1 == 0x138)
+            b1 = 0x200 | *iptr++; // 0f38->0138->02??
+        else
+            b1 = 0x300 | *iptr++; // 0f3a->013a->03??
+        remain--;
+    }
+    
+    //找到真正的指令码
+    b1 = 0;
+    xlog_info("  >> func:%s() called. b1=0x%08x;(line:%d@%s)\n", __func__, b1, __LINE__, __FILE__);
+    
+    //查表
+    BxOpcodeDecodeDescriptor64 *decode_descriptor = &decode64_descriptor[b1];
+    assert(decode_descriptor != NULL);
+    assert(decode_descriptor->decode_method != NULL);
+    
+    ia_opcode = decode_descriptor->decode_method(iptr, remain, i, b1, sse_prefix, rex_prefix, decode_descriptor->opcode_table);
+
+    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+
+    return ia_opcode;
+}
+
+//==========================================================================
+
+uint8_t *pInsData = NULL;
+uint32_t insCnt = 0;
+
+void CMyBochsCpu_t::cpu_loop(void)
+{
+    printf("  >> CMyBochsCpu_t::cpu_loop(tbc) called.\n");
+
+    unsigned int iCnt = 0;
+
+    while (1)
+    {
+        //检查事件
+        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; check Event;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+#if 0
+        if (0) //(BX_CPU_THIS_PTR async_event) 
+        {
+            if (handleAsyncEvent())
+            {
+                // If request to return to caller ASAP.
+                return;
+            }
+        }
+#endif
+        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; build instruction from hexbyte code;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+        //取址、取指、译码、构建指令对象；
+        // bxICacheEntry_c *entry = getICacheEntry();
+        // bxInstruction_c *i = entry->i;
+        uint8_t *pThisIns = pInsData + insCnt;
+
+        xlog_hexdump(pThisIns, 16 * 5 + 9);
+
+        // entry = serveICacheMiss((Bit32u) eipBiased, pAddr);
+
+        int i_opcode = fetchDecode64(pThisIns, &this->m_ins[0], 15);
+        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; opcode=%x;(line:%d@%s)\n", __func__, i_opcode, __LINE__, __FILE__);
+
+        insCnt = insCnt + 4;
+
+        // boundaryFetch(fetchPtr, remainingInPage, i);
+
+        //构建指令OBJ
+        // instructionobj.constructor()
+        // ret = assignHandler(i, BX_CPU_THIS_PTR fetchModeMask);
+
+        //执行指令
+        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; inst->exec();(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+        for (;;)
+        {
+            // instructionobj.exec();
+            break;
+        }
+
+        if (iCnt++ >= 3)
+            break;
+    }
+
+    return;
+}
+
+int bx_begin_simulator(CSimulator_t *pSim, int argc, char *argv[])
+{
+    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
+    int iret = 0;
+
+    // temp tbc
+    pInsData = getInstrData(argv[0]);
+    try
+    {
+        CMyBochsCpu_t *ptrCpu = pSim->mp_cpu;
+
+        ptrCpu->cpu_loop();
+    }
+    catch (...)
+    {
+        xlog_info("  >> func:%s() exceptions;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+    }
+    relInstrData();
+    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
+
+    return iret;
+}
+
+int bx_main_proc(int argc, char *argv[])
+{
+    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
+    int iret = 0;
+    try
+    {
+        CSimulator_t *ptrSim = new CSimulator_t(new CMyBochsCpu_t);
+        iret = ptrSim->begin_simulator(argc, argv);
+
+        delete ptrSim;
+        // throw 0; // test throw;
+    }
+    catch (...)
+    {
+        xlog_info("  >> func:%s() exceptions;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+    }
+
+    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
+
+    return 0;
+}
+
+CMyBochsApp_t theApp;
+
+// g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.0?.cpp -o myapp_exe_?
+
+int main(int argc, char *argv[])
+{
+    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
+    xlog_info("  >> the mybochs app starting ... ...\n");
+    xlog_init();
+    int iret = 0;
+    do
+    {
+        xlog_info("   >> the mybochs app do_work().\n");
+
+        CMyBochsApp_t *ptrApp = &theApp;
+        // xlog_info("\e[1m");
+        iret = ptrApp->MainProc(argc, argv);
+        // xlog_info("\e[0m");
+        xlog_info("  >> func:%s() do_work() end;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
+    } while (0);
+
+    xlog_uninit();
+    xlog_info("  >> the mybochs app exit(%d).\n", iret);
+    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
+    return 0;
+}
+
+#if 0
+g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.00.cpp -o myapp_exe_0
+g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.01.cpp -o myapp_exe_1
+g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.02.cpp -o myapp_exe_2
+valgrind --tool=memcheck --leak-check=full --track-origins=yes -s ./myapp
+#endif
+
+BxOpcodeDecodeDescriptor64 decode64_descriptor[] = {
     /*       00 => 0x0000*/ {&decoder64, BxOpcodeTable00},
     /*       01 => 0x0001*/ {&decoder64, BxOpcodeTable01},
     /*       02 => 0x0002*/ {&decoder64, BxOpcodeTable02},
@@ -1630,287 +1925,5 @@ static BxOpcodeDecodeDescriptor64 decode64_descriptor[] = {
     /* 0F 3A FD => 0x03FD*/ {&decoder64, NULL},  //BxOpcodeTable0F3AFD},
     /* 0F 3A FE => 0x03FE*/ {&decoder64, NULL},  //BxOpcodeTable0F3AFE},
     /* 0F 3A FF => 0x03FF*/ {&decoder64, NULL},  //BxOpcodeTable0F3AFF},
-    /*                   */ {NULL, NULL}};
-
-////////////////////////////////////////////////////////////////////////////
-//#define BX_CONST64(x)  (x)
-// const Bit64u ATTR_LAST_OPCODE = BX_CONST64(0x8000000000000000);
-//#define last_opcode_lockable(attr, ia_opcode)       ((attr) | (Bit64u(ia_opcode) << 48) | ATTR_LAST_OPCODE)
-//==========================================================================
-
-int decoder64_modrm(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
-{
-    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-    return 0;
-}
-
-int decoder64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
-{
-    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-
-    //得到真正的处理逻辑；
-    // Bit16u ia_opcode = findOpcode((const Bit64u*) opcode_table, decmask);
-    // if (fetchImmediate(iptr, remain, i, ia_opcode, true) < 0)
-    // assign_srcs(i, ia_opcode, nnn, rm);
-
-    return 0;
-}
-
-int decoder_ud64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
-{
-    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-    return 0;
-}
-
-int fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned remainingInPage)
-{
-    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-    xlog_hexdump(const_cast<const uint8_t *>(iptr), 16 * 5 + 11);
-    if (remainingInPage > 15)
-        remainingInPage = 15;
-    // i->setILen(remainingInPage);
-
-    unsigned remain = remainingInPage;
-    unsigned b1 = *iptr;
-
-    b1 = 0;
-    int ia_opcode = 0;
-    // unsigned seg_override = 0;
-
-    // bool lock = 0;
-    unsigned sse_prefix = 0;
-    unsigned rex_prefix = 0;
-
-fetch_b1:
-    b1 = *iptr++;
-    remain--;
-    //先处理前缀字节码
-    switch (b1)
-    {
-    case 0x40 ... 0x4F:
-    {
-        //4? rex.???? wrxb?
-        //rex.w = ?
-        //rex.r = ?
-        //rex.x = ?
-        //rex.b = ?
-        goto fetch_b1;
-        // break;
-    }
-    case 0xF2: // REPNE/REPNZ
-    case 0xF3: // REP/REPE/REPZ
-    {
-        // TBC
-    }
-    case 0x2e: // CS:
-    case 0x26: // ES:
-    case 0x36: // SS:
-    case 0x3e: // DS:
-    {
-        // TBC
-    }
-    case 0x64: // FS:
-    case 0x65: // GS:
-    {
-    }
-    case 0x66: // OpSize
-    {
-    }
-    case 0x67: // AddrSize
-    {
-    }
-    case 0xf0: // LOCK:
-    {
-    }
-    //case 0x0f: // 2 byte escape
-    //{
-    //    if (remain != 0)
-    //    {
-    //        remain--;
-    //        b1 = 0x100 | *iptr++; // 0x0F?? -> 01??
-    //        break;
-    //    }
-    //}
-    default:
-    {
-        break;
-    }
-    }
-    
-    switch(b1)
-    {
-        case 0x0f: // 2 byte escape
-        {
-            if (remain != 0)
-            {
-                remain--;
-                b1 = 0x100 | *iptr++; // 0x0F?? -> 01??
-                break;
-            }
-        }
-        default:
-        {
-            break;
-        }
-    }
-
-    // handle 3-byte opcode
-    if (b1 == 0x138 || b1 == 0x13a)
-    {
-        if (remain == 0)
-            return (-1);
-        if (b1 == 0x138)
-            b1 = 0x200 | *iptr++; // 0f38->0138->02??
-        else
-            b1 = 0x300 | *iptr++; // 0f3a->013a->03??
-        remain--;
-    }
-
-    //找到真正的指令码
-    b1 = 0;
-    //查表
-    BxOpcodeDecodeDescriptor64 *decode_descriptor = &decode64_descriptor[b1];
-    ia_opcode = decode_descriptor->decode_method(iptr, remain, i, b1, sse_prefix, rex_prefix, decode_descriptor->opcode_table);
-
-    xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-
-    return ia_opcode;
-}
-
-//==========================================================================
-
-uint8_t *pInsData = NULL;
-uint32_t insCnt = 0;
-
-void CMyBochsCpu_t::cpu_loop(void)
-{
-    printf("  >> CMyBochsCpu_t::cpu_loop(tbc) called.\n");
-
-    unsigned int iCnt = 0;
-
-    while (1)
-    {
-        //检查事件
-        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; check Event;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-#if 0
-        if (0) //(BX_CPU_THIS_PTR async_event) 
-        {
-            if (handleAsyncEvent())
-            {
-                // If request to return to caller ASAP.
-                return;
-            }
-        }
-#endif
-        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; build instruction from hexbyte code;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-        //取址、取指、译码、构建指令对象；
-        // bxICacheEntry_c *entry = getICacheEntry();
-        // bxInstruction_c *i = entry->i;
-        uint8_t *pThisIns = pInsData + insCnt;
-
-        xlog_hexdump(pThisIns, 16 * 5 + 9);
-
-        // entry = serveICacheMiss((Bit32u) eipBiased, pAddr);
-
-        int i_opcode = fetchDecode64(pThisIns, NULL, 15);
-        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; opcode=%x;(line:%d@%s)\n", __func__, i_opcode, __LINE__, __FILE__);
-
-        insCnt = insCnt + 4;
-
-        // boundaryFetch(fetchPtr, remainingInPage, i);
-
-        //构建指令OBJ
-        // instructionobj.constructor()
-        // ret = assignHandler(i, BX_CPU_THIS_PTR fetchModeMask);
-
-        //执行指令
-        xlog_info("    >>> func:CMyBochsCpu_t::%s() called; inst->exec();(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-        for (;;)
-        {
-            // instructionobj.exec();
-            break;
-        }
-
-        if (iCnt++ >= 3)
-            break;
-    }
-
-    return;
-}
-
-int bx_begin_simulator(CSimulator_t *pSim, int argc, char *argv[])
-{
-    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
-    int iret = 0;
-
-    // temp tbc
-    pInsData = getInstrData(argv[0]);
-    try
-    {
-        CMyBochsCpu_t *ptrCpu = pSim->mp_cpu;
-
-        ptrCpu->cpu_loop();
-    }
-    catch (...)
-    {
-        xlog_info("  >> func:%s() exceptions;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-    }
-    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
-
-    return iret;
-}
-
-int bx_main_proc(int argc, char *argv[])
-{
-    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
-    int iret = 0;
-    try
-    {
-        CSimulator_t *ptrSim = new CSimulator_t(new CMyBochsCpu_t);
-        iret = ptrSim->begin_simulator(argc, argv);
-
-        delete ptrSim;
-        // throw 0; // test throw;
-    }
-    catch (...)
-    {
-        xlog_info("  >> func:%s() exceptions;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-    }
-
-    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
-
-    return 0;
-}
-
-CMyBochsApp_t theApp;
-
-// g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.0?.cpp -o myapp_exe_?
-
-int main(int argc, char *argv[])
-{
-    xlog_info("  >> func:%s(argc=%d, argv=%p) entry;(line:%d@%s)\n", __func__, argc, argv, __LINE__, __FILE__);
-    xlog_info("  >> the mybochs app starting ... ...\n");
-    xlog_init();
-    int iret = 0;
-    do
-    {
-        xlog_info("   >> the mybochs app do_work().\n");
-
-        CMyBochsApp_t *ptrApp = &theApp;
-        // xlog_info("\e[1m");
-        iret = ptrApp->MainProc(argc, argv);
-        // xlog_info("\e[0m");
-        xlog_info("  >> func:%s() do_work() end;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
-    } while (0);
-
-    xlog_uninit();
-    xlog_info("  >> the mybochs app exit(%d).\n", iret);
-    xlog_info("  >> func:%s() exit(%d);(line:%d@%s)\n", __func__, iret, __LINE__, __FILE__);
-    return 0;
-}
-
-#if 0
-g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.00.cpp -o myapp_exe_0
-g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.01.cpp -o myapp_exe_1
-g++ -std=c++11 -g -Wall -O0 mybochs-la-0.1.02.cpp -o myapp_exe_2
-#endif
+    /*                   */ {NULL, NULL}
+};
