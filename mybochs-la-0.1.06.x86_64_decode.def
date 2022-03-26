@@ -1,0 +1,7 @@
+bx_define_opcode(BX_IA_ERROR, "error", "error", &CMyBochsCpu_t::BxError, &CMyBochsCpu_t::exe1, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, BX_TRACE_END)
+bx_define_opcode(BX_IA_AAA,   "aaa",   "aaa",   NULL,                    &CMyBochsCpu_t::exe1, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
+bx_define_opcode(BX_IA_AAD,   "aad",   "aad",   NULL,                    &CMyBochsCpu_t::exe1, 0, OP_Ib,   OP_NONE, OP_NONE, OP_NONE, 0)
+bx_define_opcode(BX_IA_AAM,   "aam",   "aam",   NULL,                    &CMyBochsCpu_t::exe1, 0, OP_Ib,   OP_NONE, OP_NONE, OP_NONE, 0)
+bx_define_opcode(BX_IA_AAS,   "aas",   "aas",   NULL,                    &CMyBochsCpu_t::exe1, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
+bx_define_opcode(BX_IA_DAA,   "daa",   "daa",   NULL,                    &CMyBochsCpu_t::exe1, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
+bx_define_opcode(BX_IA_DAS,   "das",   "das",   NULL,                    &CMyBochsCpu_t::exe1, 0, OP_NONE, OP_NONE, OP_NONE, OP_NONE, 0)
