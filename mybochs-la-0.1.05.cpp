@@ -512,7 +512,11 @@ struct bxIAOpcodeTable
     Bit8u src[4];
     Bit8u opflags;
 };
-
+//======================================================================
+#define OP_NONE 0
+#define BX_TRACE_END 0
+#define OP_Ib 0
+//======================================================================
 enum OpCodeIdx_t
 {
 #define bx_define_opcode(a, b, c, d, e, f, s1, s2, s3, s4, g) a,
