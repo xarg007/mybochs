@@ -6,6 +6,7 @@
 #include <cstdarg>
 
 // C++11(ISO/IEC-14882:2011)@gcc9+@debian11
+
 extern "C"
 {
 #include <sys/stat.h>
@@ -335,6 +336,9 @@ struct S_ELF64_ELFHeader_t *parse_elf64_elf_header(uint8_t *pElfData)
 
     return NULL;
 }
+
+//========================================================================
+//=====temp code==========================================================
 unsigned char *g_pHexData = NULL;
 uint8_t *getInstrData(const char *pFileName)
 {
@@ -361,7 +365,6 @@ void relInstrData(void)
 {
     free(g_pHexData);
 }
-
 //========================================================================
 
 class CMyBochsApp_t
@@ -379,18 +382,35 @@ class bxInstruction_c
 public:
     bxInstruction_c();
     virtual ~bxInstruction_c();
-private:
+public:
     struct S_Instr_t
     {
-        uint8_t legacy_prefix[4]; //兼容前缀 四组 [legacy_prefix_g1][legacy_prefix_g2][legacy_prefix_g3][legacy_prefix_g4]
-        uint8_t rex_prefix[4];    //64位新增前缀
-        uint8_t opcode[4];        //操作码
-        uint8_t modRM[4];         //？[rex.?][mod][reg/opcode_ex][r/m]
-        uint8_t SIB[4];           //? [rex.?][base][idx][offset]
-        uint8_t Disp[8];          //偏移
-        uint8_t Immed[8];         //立即数
-    }m_ins;
-    uint8_t m_opcode[16]; //本条指令全字节码
+        uint8_t rex_prefix[8];      //64位新增前缀
+        uint8_t legacy_prefixes[8]; //兼容前缀 四组 [legacy_prefix_g1:(F0|F2|F3|)]
+                                    //              [legacy_prefix_g2:(2E|3E|26|36|64|65)]
+                                    //              [legacy_prefix_g3:(66)]
+                                    //              [legacy_prefix_g4:(67)]
+        uint8_t opcode[8];          //操作码
+        uint8_t modRM[8];           //？[rex.?][mod][reg/opcode_ex][r/m]
+        uint8_t SIB[8];             //? [rex.?][base][idx][offset]
+        uint8_t Disp[8];            //偏移
+        uint8_t Immed[8];           //立即数
+    }m_ins = {0};
+    uint8_t m_opcode[16] = {0};     //本条指令全字节码
+public:
+    void setRexPrefix(uint8_t rex)
+    {
+        m_ins.rex_prefix[0] = rex;              // 原本的字节码
+        m_ins.rex_prefix[1] = (rex>>4)&0x0f;    // 只保留高四位 应为0x04;
+        m_ins.rex_prefix[2] =  rex&0xf0;        // 只保留高四位 应为0x40;
+        m_ins.rex_prefix[3] = 0x00;
+        m_ins.rex_prefix[4] = (rex&0x08)!=0x00; // 取rex.w
+        m_ins.rex_prefix[5] = (rex&0x08)!=0x00; // 取rex.r
+        m_ins.rex_prefix[6] = (rex&0x08)!=0x00; // 取rex.x
+        m_ins.rex_prefix[7] = (rex&0x08)!=0x00; // 取rex.b
+    }
+    
+    void setLegacyPrefix(uint8_t legacy_prefix);
 };
 
 class CMyBochsCpu_t
@@ -454,6 +474,57 @@ bxInstruction_c::bxInstruction_c()
 
 bxInstruction_c::~bxInstruction_c()
 {
+}
+
+void bxInstruction_c::setLegacyPrefix(uint8_t legacy_prefix)
+{
+    switch(legacy_prefix)
+    {
+        //group 1;
+        case 0xF0:
+        case 0xF2:
+        case 0xF3:
+        {
+            m_ins.legacy_prefixes[0] = legacy_prefix;
+            break;
+        }
+        //group 2;
+        case 0x2E:
+        case 0x3E:
+        case 0x26:
+        case 0x36:
+        case 0x64:
+        case 0x65:
+        {
+            m_ins.legacy_prefixes[1] = legacy_prefix;
+            break;
+        }
+        //group 3;
+        case 0x66:
+        {
+            m_ins.legacy_prefixes[2] = legacy_prefix;
+            break;
+        }
+        //broup 4;
+        case 0x67:
+        {
+            m_ins.legacy_prefixes[3] = legacy_prefix;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+    
+    for(int i=0; i<4; i++)
+    {
+        if(m_ins.legacy_prefixes[4+i] == 0)
+        {
+            m_ins.legacy_prefixes[4+i] = legacy_prefix;
+            break;
+        }
+    }
 }
 
 CMyBochsCpu_t::CMyBochsCpu_t()
@@ -648,7 +719,15 @@ int decoder_ud64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsign
     return 0;
 }
 
-int CMyBochsCpu_t::fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned remainingInPage)
+enum SSE_PREFIX_IDX
+{
+  SSE_PREFIX_NONE = 0,
+  SSE_PREFIX_66   = 1,
+  SSE_PREFIX_F3   = 2,
+  SSE_PREFIX_F2   = 3
+};
+
+int CMyBochsCpu_t::fetchDecode64(const Bit8u *iptr, bxInstruction_c *ptrInst, unsigned remainingInPage)
 {
     xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
     xlog_hexdump(const_cast<const uint8_t *>(iptr), 16 * 5 + 11);
@@ -662,9 +741,9 @@ int CMyBochsCpu_t::fetchDecode64(const Bit8u *iptr, bxInstruction_c *i, unsigned
 
     //b1 = 0;
     int ia_opcode = 0;
-    //unsigned seg_override = 0;
+    unsigned seg_override = 0;
 
-    //bool lock = 0;
+    bool lock = 0;
     unsigned sse_prefix = 0;
     unsigned rex_prefix = 0;
 
@@ -675,6 +754,7 @@ fetch_b1:
     //先处理前缀字节码
     switch (b1)
     {
+        //rex prefix;
         case 0x40 ... 0x4F:
         {
             //4? rex.???? wrxb?
@@ -682,43 +762,93 @@ fetch_b1:
             //rex.r = ?
             //rex.x = ?
             //rex.b = ?
-            goto fetch_b1;
-            // break;
+            ptrInst->setRexPrefix(b1);
+            rex_prefix = b1;
+            if(remain != 0x00)
+            {
+                goto fetch_b1;
+            }
+            return (-1);
+        }
+        //legacy_prefix group 1;
+        case 0xf0: // LOCK:
+        {
+            rex_prefix = 0;
+            lock = 1;
+            ptrInst->setLegacyPrefix(b1);
+            if (remain != 0)
+            {
+                goto fetch_b1;
+            }
+            return(-1);
         }
         case 0xF2: // REPNE/REPNZ
         case 0xF3: // REP/REPE/REPZ
         {
-            // TBC
+            rex_prefix = 0;  //F3&F2 与 rex;
+            sse_prefix = (b1 & 3) ^ 1;
+            //i->setLockRepUsed(b1 & 3);
+            //设置指令对象参数；
+            ptrInst->setLegacyPrefix(b1);
+            if (remain != 0)
+            {
+                goto fetch_b1;
+            }
+            return(-1);
         }
+        //legacy_prefix group 2;
         case 0x2e: // CS:
+        case 0x3e: // DS:
         case 0x26: // ES:
         case 0x36: // SS:
-        case 0x3e: // DS:
         {
-            // TBC
+            rex_prefix = 0;
+            ptrInst->setLegacyPrefix(b1);
+            if (remain != 0)
+            {
+                goto fetch_b1;
+            }
+            return(-1);
         }
         case 0x64: // FS:
         case 0x65: // GS:
         {
+            rex_prefix = 0;
+            seg_override = b1 & 0xf;
+            ptrInst->setLegacyPrefix(b1);
+            if (remain != 0)
+            {
+                goto fetch_b1;
+            }
+            return(-1);
         }
+        //legacy_prefix group 3;
         case 0x66: // OpSize
         {
+            rex_prefix = 0;
+            if(!sse_prefix)
+                sse_prefix = SSE_PREFIX_66;
+            ptrInst->setLegacyPrefix(b1);
+            //i->setOs32B(0);
+            if (remain != 0)
+            {
+                goto fetch_b1;
+            }
+            return(-1);
         }
+        //legacy_prefix group 4;
         case 0x67: // AddrSize
         {
+            rex_prefix = 0;
+            //i->clearAs64();
+            ptrInst->setLegacyPrefix(b1);
+            if (remain != 0)
+            {
+                goto fetch_b1;
+            }
+            return(-1);
         }
-        case 0xf0: // LOCK:
-        {
-        }
-        //case 0x0f: // 2 byte escape
-        //{
-        //    if (remain != 0)
-        //    {
-        //        remain--;
-        //        b1 = 0x100 | *iptr++; // 0x0F?? -> 01??
-        //        break;
-        //    }
-        //}
+
         default:
         {
             break;
@@ -744,16 +874,20 @@ fetch_b1:
         remain--;
     }
     
+    int iTest = lock&seg_override;
+    xlog_info("  >> func:%s() called;(0x%x)(line:%d@%s)\n", __func__, iTest, __LINE__, __FILE__);
+    
     //找到真正的指令码
-    b1 = 0;
-    xlog_info("  >> func:%s() called. b1=0x%08x;(line:%d@%s)\n", __func__, b1, __LINE__, __FILE__);
+    //b1 = 0;
+    xlog_info("  >> func:%s() called. b1=0x%08x, remain=%d;(line:%d@%s)\n", __func__, b1, remain, __LINE__, __FILE__);
     
     //查表
     BxOpcodeDecodeDescriptor64 *decode_descriptor = &decode64_descriptor[b1];
+    
     assert(decode_descriptor != NULL);
     assert(decode_descriptor->decode_method != NULL);
     
-    ia_opcode = decode_descriptor->decode_method(iptr, remain, i, b1, sse_prefix, rex_prefix, decode_descriptor->opcode_table);
+    ia_opcode = decode_descriptor->decode_method(iptr, remain, ptrInst, b1, sse_prefix, rex_prefix, decode_descriptor->opcode_table);
 
     xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
 
@@ -794,6 +928,10 @@ void CMyBochsCpu_t::cpu_loop(void)
         xlog_hexdump(pThisIns, 16 * 5 + 9);
 
         // entry = serveICacheMiss((Bit32u) eipBiased, pAddr);
+        for(int i=0; i<1024; i++)
+        {
+            //this->m_ins[i] = {0};
+        }
 
         int i_opcode = fetchDecode64(pThisIns, &this->m_ins[0], 15);
         xlog_info("    >>> func:CMyBochsCpu_t::%s() called; opcode=%x;(line:%d@%s)\n", __func__, i_opcode, __LINE__, __FILE__);
