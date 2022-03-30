@@ -695,6 +695,26 @@ extern BxOpcodeDecodeDescriptor64 decode64_descriptor[];
 //#define last_opcode_lockable(attr, ia_opcode)       ((attr) | (Bit64u(ia_opcode) << 48) | ATTR_LAST_OPCODE)
 //==========================================================================
 
+Bit16u findOpcode(const Bit64u *opMap, Bit32u decmask)
+{
+    Bit16u ia_opcode = 0;//BX_IA_ERROR;
+    Bit64u op;
+    
+    do
+    {
+        op = *opMap++;
+        Bit32u ignmsk = Bit32u(op) & 0xFFFFFF;
+        Bit32u opmsk  = Bit32u(op >> 24);
+        if ((opmsk & ignmsk) == (decmask & ignmsk))
+        {
+            ia_opcode = Bit16u(op >> 48) & 0x7FFF; // upper bit indicates that parsing is done and doesn't belong to opcode
+            break;
+        }
+    }while(Bit64s(op) > 0);
+    
+    return ia_opcode;
+}
+
 int decoder64_modrm(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned b1, unsigned sse_prefix, unsigned rex_prefix, const void *opcode_table)
 {
     xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
@@ -705,6 +725,34 @@ int decoder64(const Bit8u *iptr, unsigned &remain, bxInstruction_c *i, unsigned 
 {
     xlog_info("  >> func:%s() called;(line:%d@%s)\n", __func__, __LINE__, __FILE__);
 
+    //unsigned rex_b = 0;
+    //if (rex_prefix)
+    //{
+    //    rex_b = ((rex_prefix & 0x1) << 3);
+    //}
+    //
+    //unsigned rm = (b1 & 7) | rex_b;
+    //unsigned nnn = (b1 >> 3) & 7;
+    //i->assertModC0();
+    
+    //Bit32u decmask = (1 << IS64_OFFSET) |
+    //                (i->osize() << OS32_OFFSET) |
+    //                (i->asize() << AS32_OFFSET) |
+    //                (sse_prefix << SSE_PREFIX_OFFSET) |
+    //                (1 << MODC0_OFFSET) |
+    //                ((nnn & 0x7) << NNN_OFFSET) |
+    //                ((rm  & 0x7) << RRR_OFFSET);
+    //if (nnn == rm)
+    //decmask |= (1 << SRC_EQ_DST_OFFSET);
+    //
+    //Bit16u ia_opcode = findOpcode((const Bit64u*) opcode_table, decmask);
+    //
+    //if (fetchImmediate(iptr, remain, i, ia_opcode, true) < 0)
+    //return (-1);
+    //
+    //assign_srcs(i, ia_opcode, nnn, rm);
+    //
+    //return ia_opcode;
     //得到真正的处理逻辑；
     // Bit16u ia_opcode = findOpcode((const Bit64u*) opcode_table, decmask);
     // if (fetchImmediate(iptr, remain, i, ia_opcode, true) < 0)
